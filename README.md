@@ -1,4 +1,4 @@
-This version is badly hacked together from the files of a previous release on https://ankiweb.net/shared/info/858591644 so long as it works. Depends on Pydub and FFmpeg.
+This version is badly hacked together from the files of a previous release on https://ankiweb.net/shared/info/858591644 so long as it works. Depends on Pydub and FFmpeg binaries in the pydub directory.
 
 # anki-forvo-dl
 <b>An add-on that allows you to (bulk-) add <a href="http://Forvo.com" rel="nofollow">Forvo.com</a> pronunciations to your anki cards - fully automatically</b>
