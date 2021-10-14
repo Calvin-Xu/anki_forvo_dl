@@ -10,6 +10,9 @@ from tempfile import TemporaryFile
 from warnings import warn
 from functools import wraps
 
+# has ffmpeg 4.4.2
+os.environ['PATH'] = os.pathsep.join( [os.path.dirname(os.path.realpath(__file__)), os.environ['PATH'] ] )
+
 try:
     import audioop
 except ImportError:
