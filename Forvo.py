@@ -10,9 +10,11 @@ from urllib.error import HTTPError
 
 from aqt import AnkiQt
 from bs4 import BeautifulSoup, Tag
-from .Config import Config
+
+from . import Config
 from .Exceptions import NoResultsException
 from .Util import log_debug
+from .pydub import AudioSegment
 
 search_url = "https://forvo.com/word/"
 download_url = "https://forvo.com/download/mp3/"
@@ -33,7 +35,7 @@ class Pronunciation:
 
     def download_pronunciation(self):
         """Downloads the pronunciation using the pronunciation url in the pronunciation object, adds the audio to Anki's DB and stores the media id in the pronunciation object."""
-        from .. import temp_dir
+        from . import temp_dir
         req = urllib.request.Request(self.download_url)
         dl_path = os.path.join(temp_dir, "pronunciation_" + self.language + "_" + self.word + (
             ".ogg" if self.is_ogg else ".mp3"))
@@ -41,6 +43,13 @@ class Pronunciation:
             res: HTTPResponse = urllib.request.urlopen(req)
             f.write(res.read())
             res.close()
+
+        if self.is_ogg:
+            print("Converting ogg to mp3")
+            oggfile = AudioSegment.from_ogg(dl_path)
+            oggfile.export("pronunciation_" + self.language + "_" + self.word + ".mp3", format="mp3")
+            os.remove(dl_path)
+            dl_path = "pronunciation_" + self.language + "_" + self.word + ".mp3"
 
         media_name = self.mw.col.media.add_file(dl_path)
         self.audio = media_name
@@ -167,6 +176,6 @@ class Forvo:
     @staticmethod
     def cleanup():
         """Removes any files in the /temp directory."""
-        from .. import temp_dir
+        from . import temp_dir
         for f in os.listdir(temp_dir):
             os.remove(os.path.join(temp_dir, f))

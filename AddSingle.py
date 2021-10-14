@@ -11,7 +11,7 @@ from .Util import CustomScrollbar
 
 class PronunciationWidget(QWidget):
     def __init__(self, pronunciation: Pronunciation, select_pronunciation, parent=None):
-        from .. import asset_dir
+        from . import asset_dir
         super(PronunciationWidget, self).__init__(parent)
         container = QWidget(self)
         container.setFixedWidth(450)
@@ -67,15 +67,13 @@ class PronunciationWidget(QWidget):
 
 
 class AddSingle(QDialog):
-    def __init__(self, parent, pronunciations: List[Pronunciation], hidden_entries_amount):
+    def __init__(self, parent, pronunciations: List[Pronunciation]):
         super().__init__(parent)
+
         self.selected_pronunciation: Pronunciation = None
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
         self.description = "<h1>anki-forvo-dl</h1><p>Please select the audio you want to add.</p><p><small>You can hold down the shift key when clicking on the forvo <br/> button in the editor to automatically select the top pronunciation.</small></p>"
-
-        if hidden_entries_amount > 0:
-            self.description += f"<b><small>There are {hidden_entries_amount} more entries which you chose to hide by deactivating .ogg fallback.</small></b>"
         self.description_label = QLabel(text=self.description)
         self.description_label.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.description_label)

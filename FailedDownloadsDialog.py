@@ -1,3 +1,4 @@
+import os
 from typing import List
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QDesktopServices
@@ -6,8 +7,7 @@ from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QListWidget, QListWidg
 from anki.cards import Card
 from aqt.browser import Browser
 
-from .Config import Config
-from .Exceptions import all_errors
+from . import Exceptions, Config
 from .Util import FailedDownload, open_file
 
 
@@ -44,7 +44,7 @@ class FailedListWidgetItemWidget(QWidget):
 class FailedDownloadsDialog(QDialog):
 
     def __init__(self, parent, failed, mw, config: Config, skipped_cards: int):
-        from .. import log_dir
+        from . import log_dir
         super().__init__(parent)
 
         self.parent = parent
@@ -74,7 +74,7 @@ class FailedDownloadsDialog(QDialog):
         for fail in self.failed:
             # Show traceback for debugging:
             # showInfo(''.join(traceback.format_tb(fail.reason.__traceback__)))
-            error_instance = next((e for e in all_errors if isinstance(fail.reason, e)), None)
+            error_instance = next((e for e in Exceptions.all_errors if isinstance(fail.reason, e)), None)
 
             if error_instance is not None:
                 if error_instance in reasons.keys():
