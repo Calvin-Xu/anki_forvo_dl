@@ -18,6 +18,13 @@ from .Forvo import Pronunciation, Forvo
 from .LanguageSelector import LanguageSelector
 from .Util import FailedDownload
 
+import hashlib
+def md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
 
 class BulkAdd(QDialog):
     """Dialog that opens when clicking on 'Bulk Add Forvo Audio to X cards' in the context menu in the browser"""
@@ -334,25 +341,57 @@ class Thread(QThread):
 
                 # Get the results
                 results = Forvo(query, language, self.mw, self.config)
-                if results is not None:
+                # if results is not None:
+                try:
                     results = results.load_search_query().get_pronunciations().pronunciations
-                else:
-                    raise NoResultsException()
-                results.sort(key=lambda result: result.votes)  # sort by votes
+                    results.sort(key=lambda result: result.votes)  # sort by votes
 
-                top: Pronunciation = results[len(results) - 1]  # get most upvoted pronunciation
-                self.log.emit("Selected pronunciation by %s with %s votes" % (top.user, str(top.votes)))
-                top.download_pronunciation()  # download that
-                self.log.emit("Downloaded pronunciation")
-                if self.config.get_config_object("appendAudio").value:
-                    card.note()[audio_field] += "[sound:%s]" % top.audio  # set audio field content to the respective sound
-                    self.log.emit("Appended sound string to field content")
-                else:
-                    card.note()[audio_field] = "[sound:%s]" % top.audio  # set audio field content to the respective sound
-                    self.log.emit("Placed sound string in field")
+                    top: Pronunciation = results[len(results) - 1]  # get most upvoted pronunciation
+                    self.log.emit("Selected pronunciation by %s with %s votes" % (top.user, str(top.votes)))
+                    top.download_pronunciation()  # download that
+                    self.log.emit("Downloaded pronunciation")
+                    if self.config.get_config_object("appendAudio").value:
+                        card.note()[audio_field] += "[sound:%s]" % top.audio  # set audio field content to the respective sound
+                        self.log.emit("Appended sound string to field content")
+                    else:
+                        card.note()[audio_field] = "[sound:%s]" % top.audio  # set audio field content to the respective sound
+                        self.log.emit("Placed sound string in field")
 
-                card.note().flush()  # flush the toilet
-                self.log.emit("Saved note")
+                    card.note().flush()  # flush the toilet
+                    self.log.emit("Saved note")
+                except Exception as e:
+                    if language == "ja":
+                        import urllib.request
+                        import urllib.parse
+                        import json
+                        japanesePod_url = "http://assets.languagepod101.com/dictionary/japanese/audiomp3.php?"
+                        jisho_search_url = "https://jisho.org/api/v1/search/words?keyword=";
+                        req_jisho = urllib.request.Request(jisho_search_url + urllib.parse.quote(query))
+                        res_jisho = urllib.request.urlopen(req_jisho)
+                        kana = json.load(res_jisho)["data"][0]["japanese"][0]["reading"]
+                        req_japanesePod101 = urllib.request.Request(japanesePod_url + "kanji=" + urllib.parse.quote(query) + "&kana=" + urllib.parse.quote(kana))
+                        from . import temp_dir
+                        dl_path = os.path.join(temp_dir, "pronunciation_" + "ja" + "_" + query + ".mp3")
+                        try:
+                            res: HTTPResponse = urllib.request.urlopen(req_japanesePod101)
+                            with open(dl_path, "wb") as f:
+                                f.write(res.read())
+                                res.close()
+                            if md5(dl_path) == "7e2c2f954ef6051373ba916f000168dc":
+                                raise NoResultsException
+                            media_name = self.mw.col.media.add_file(dl_path)
+                            if self.config.get_config_object("appendAudio").value:
+                                card.note()[audio_field] += "[sound:%s]" % media_name  # set audio field content to the respective sound
+                                self.log.emit("Appended sound string to field content")
+                            else:
+                                card.note()[audio_field] = "[sound:%s]" % media_name  # set audio field content to the respective sound
+                                self.log.emit("Placed sound string in field")
+                            card.note().flush()  # flush the toilet
+                            self.log.emit("Saved note")
+                        except Exception as e:
+                            raise NoResultsException
+                    else:
+                        raise NoResultsException
             except Exception as e:
                 # Save all raised exceptions in a list to retrieve them later in the FailedDownloadsDialog
                 self.failed.append(FailedDownload(reason=e, card=card))
