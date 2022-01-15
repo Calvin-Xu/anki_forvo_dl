@@ -343,24 +343,8 @@ class Thread(QThread):
                 results = Forvo(query, language, self.mw, self.config)
                 # if results is not None:
                 try:
-                    results = results.load_search_query().get_pronunciations().pronunciations
-                    results.sort(key=lambda result: result.votes)  # sort by votes
-
-                    top: Pronunciation = results[len(results) - 1]  # get most upvoted pronunciation
-                    self.log.emit("Selected pronunciation by %s with %s votes" % (top.user, str(top.votes)))
-                    top.download_pronunciation()  # download that
-                    self.log.emit("Downloaded pronunciation")
-                    if self.config.get_config_object("appendAudio").value:
-                        card.note()[audio_field] += "[sound:%s]" % top.audio  # set audio field content to the respective sound
-                        self.log.emit("Appended sound string to field content")
-                    else:
-                        card.note()[audio_field] = "[sound:%s]" % top.audio  # set audio field content to the respective sound
-                        self.log.emit("Placed sound string in field")
-
-                    card.note().flush()  # flush the toilet
-                    self.log.emit("Saved note")
-                except Exception as e:
                     if language == "ja":
+                        self.log.emit("Trying to download from JapanesePod101")
                         import urllib.request
                         import urllib.parse
                         import json
@@ -392,6 +376,23 @@ class Thread(QThread):
                             raise NoResultsException
                     else:
                         raise NoResultsException
+                except Exception as e:
+                    results = results.load_search_query().get_pronunciations().pronunciations
+                    results.sort(key=lambda result: result.votes)  # sort by votes
+
+                    top: Pronunciation = results[len(results) - 1]  # get most upvoted pronunciation
+                    self.log.emit("Selected pronunciation by %s with %s votes" % (top.user, str(top.votes)))
+                    top.download_pronunciation()  # download that
+                    self.log.emit("Downloaded pronunciation")
+                    if self.config.get_config_object("appendAudio").value:
+                        card.note()[audio_field] += "[sound:%s]" % top.audio  # set audio field content to the respective sound
+                        self.log.emit("Appended sound string to field content")
+                    else:
+                        card.note()[audio_field] = "[sound:%s]" % top.audio  # set audio field content to the respective sound
+                        self.log.emit("Placed sound string in field")
+
+                    card.note().flush()  # flush the toilet
+                    self.log.emit("Saved note")
             except Exception as e:
                 # Save all raised exceptions in a list to retrieve them later in the FailedDownloadsDialog
                 self.failed.append(FailedDownload(reason=e, card=card))
