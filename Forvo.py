@@ -117,8 +117,8 @@ class Forvo:
         lang_container = [lang for lang in available_langs_el if
                           re.findall(r"language-container-(\w{2,4})", lang.attrs["id"])[0] == self.language][0]
         log_debug("[Forvo.py] Done searching lang container")
-        pronunciations: Tag = lang_container.find_all(class_="pronunciations")[0].find_all(class_="show-all-pronunciations")[0].find_all("li")
-        
+        pronunciations: Tag = lang_container.find_all(class_="pronunciations")[0].find_all(class_="pronunciations-list")[0].find_all("li")
+
         log_debug("[Forvo.py] Going through all pronunciations")
         for pronunciation in pronunciations:
             if len(pronunciation.find_all(class_="more")) == 0:
@@ -146,7 +146,7 @@ class Forvo:
                 pronunciation_dl = pronunciation_dls[0]
                 dl_url = "https://audio00.forvo.com/audios/mp3/" + str(base64.b64decode(pronunciation_dl), "utf-8")
 
-            username = pronunciation.find_all(class_="ofLink", recursive=False)
+            username = pronunciation.find_all(class_="info")[0].find_all(class_="ofLink", recursive=False)
             if len(username) == 0:
                 username = re.findall("Pronunciation by(.*)", pronunciation.contents[2], re.S)[0].strip()
             else:
@@ -155,8 +155,7 @@ class Forvo:
                 Pronunciation(self.language,
                               username,
                               pronunciation.find_all(class_="from")[0].contents[0],
-                              int(pronunciation.find_all(class_="more")[0].find_all(class_="main_actions")[0].find_all(
-                                  class_="share")[0].attrs["data-id"]),
+                              int(pronunciation.find_all(class_="more")[0].find_all(class_="main_actions")[0].find_all(class_="vote_good")[0].attrs["data-p2"]),
                               vote_count,
                               dl_url,
                               is_ogg,
